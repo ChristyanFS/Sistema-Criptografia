@@ -1,0 +1,129 @@
+# BIBLIOTECAS
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
+import base64
+from time import sleep
+
+# -----------------------------
+# Função para validar o acesso do inspetor
+inspetores = [
+        'Inspetor1', {'Nome': 'Henrique souza', 'Senha': '18f6d623843f558f'},
+        'Inspetor2', {'Nome': 'Jose Antonio', 'Senha': '2173edceb3d2cf68'},
+        'Inspetor3', {'Nome': 'Guilherme Santos', 'Senha': 'd7eb89ca4fde2d3e'},
+        'Inspetor4', {'Nome': 'Vitor Trindade', 'Senha': '2e7db3014c4bee12'}
+    ]
+
+def autenticar():
+    tentativas = 3
+    while tentativas > 0:
+        try:
+            print("=== ÁREA RESTRITA - GUARDA COSTEIRA ===")
+            if tentativas < 3:
+                print(f"Tentativas restantes: {tentativas}")
+            login = input("NOME: ").strip().lower()
+            senha_digitada = input("SENHA: ").strip().lower()
+            print("Verificando Informações...")
+            sleep(1)
+        except KeyboardInterrupt:
+            print('\nInspetor interrompeu o funcioamento do código')
+            exit()
+        encontrado = False
+        # FOR que faz toda a verificação.
+        for i in range(0, len(inspetores), 2):
+            insp_lista = inspetores[i].lower()  # Recebe o Inspetor 1
+            dados = inspetores[i + 1]  # Recebe os dados do Inspetor1
+            nome = dados["Nome"].lower()  # Recebe o nome do inspetor
+            senha = dados["Senha"].lower()  # Recebe a senha do inspetor
+            # Realizando a comparação de login
+            if login == insp_lista or login == nome:
+                encontrado = True
+                if senha == senha_digitada:
+                    print(f"Acesso autorizado! Bem-vindo Inspetor, {dados['Nome'].capitalize()}.\n")
+                    return senha_digitada.encode("utf-8")
+                else:
+                    print("Senha ou Nome incorretos !\n")
+                break
+        if not encontrado:
+            print("Inspetor não encontrado.\n")
+        tentativas -= 1
+    print("Você excedeu o limite de tentativas.")
+    exit()
+
+# -----------------------------
+# Função para criptografar mensagem
+def criptografar(mensagem, chave):
+    # Inicializa o cifrador em modo ECB
+    cipher = AES.new(chave, AES.MODE_ECB)
+    # Ajusta o tamanho da mensagem para múltiplos de 16 bytes
+    mensagem = pad(mensagem.encode("utf-8"), AES.block_size)
+    # Criptografa e converte para Base64 (texto legível)
+    criptografada = cipher.encrypt(mensagem)
+    return base64.b64encode(criptografada).decode("utf-8")
+
+# -----------------------------
+# Função para descriptografar mensagem
+def descriptografar(mensagem_criptografada, chave):
+    try:
+        cipher = AES.new(chave, AES.MODE_ECB)
+        # Converte de Base64 para bytes
+        dados = base64.b64decode(mensagem_criptografada)
+        # Descriptografa e remove o preenchimento
+        mensagem = unpad(cipher.decrypt(dados), AES.block_size)
+        return mensagem.decode("utf-8")
+    except (ValueError, KeyError):
+        return "Erro: mensagem ou chave incorreta!"
+
+# -----------------------------
+#PROGRAMA PRINCIPAL
+def main():
+    chave = autenticar()
+
+    while True:
+        try: # Inicio do tratamento de erros
+            print("\n=== SISTEMA DE CRIPTOGRAFIA DO NAVIO ===")
+            print("1 - Criptografar mensagem")
+            print("2 - Descriptografar mensagem")
+            print("0 - Sair")
+
+            opcao = int(input("Escolha uma opção: "))
+
+        except ValueError: # Entrada inválida
+            print("\nEntrada inválida. Por favor, digite 1, 2 ou 0.")
+            continue  # Volta para o início do 'while True'
+
+        except KeyboardInterrupt: # Interropender o programa
+            print('\nO inspetor interrompeu o programa. Encerrando.')
+            exit()
+
+        else:
+            if opcao == 1:
+                texto = input("Digite a mensagem (máx. 128 caracteres): ")
+                if len(texto) > 128:
+                    print("25Mensagem muito longa! Use até 128 caracteres.")
+                else:
+                    print('Criptografando...')
+                    sleep(1)
+                    cifrada = criptografar(texto, chave)
+                    print("\nMensagem criptografada:")
+                    print(cifrada)
+
+            elif opcao == 2:
+                cifrada = input("Digite a mensagem criptografada: ")
+                print('Descriptografando...')
+                sleep(1)
+                decifrada = descriptografar(cifrada, chave)
+                print("\nMensagem descriptografada:")
+                print(decifrada)
+
+            elif opcao == 0:
+                print("Encerrando o sistema...")
+                exit()
+
+            else:
+                print("Opção inválida, tente novamente!")
+
+
+if __name__ == "__main__":
+    main()
+
+main()
